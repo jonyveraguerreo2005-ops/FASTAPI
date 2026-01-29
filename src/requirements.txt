@@ -4,3 +4,4 @@ sqlalchemy
 pymysql
 jinja2
 cryptography
+psycopg2-binary

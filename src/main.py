@@ -4,8 +4,9 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
+import os
 
-DATABASE_URL = "mysql+pymysql://root:root@db_mysql:3306/tienda_fastapi"
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://usuario:password@db_postgres:5432/tienda_fastapi")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
