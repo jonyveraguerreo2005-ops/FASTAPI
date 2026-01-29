@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tienda MySQL</title>
+</head>
+<body>
+    <h1>Productos en Base de Datos MySQL</h1>
+    
+    <div style="background-color: #f0f0f0; padding: 20px; margin-bottom: 20px;">
+        <h3>Añadir Nuevo Producto</h3>
+        <form action="/add" method="post">
+            <input type="text" name="name" placeholder="Nombre (ej: Gorra)" required>
+            <input type="number" step="0.01" name="price" placeholder="Precio" required>
+            <button type="submit">Guardar en BD</button>
+        </form>
+    </div>
+
+    <ul>
+        {% for item in items %}
+            <li>
+                <strong>{{ item.name }}</strong> - {{ item.price }}€
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

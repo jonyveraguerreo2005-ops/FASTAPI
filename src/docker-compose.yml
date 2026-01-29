@@ -1,0 +1,31 @@
+services:
+  # CAJA 1: TU APLICACIÓN
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    # ESTO ES LO NUEVO: Esperar a que la BD esté "sana" (healthy)
+    depends_on:
+      db_mysql:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    # Si falla algo, reiníciate automáticamente
+    restart: on-failure
+
+  # CAJA 2: BASE DE DATOS MYSQL
+  db_mysql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      MYSQL_DATABASE: tienda_fastapi
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    # ESTO ES LO NUEVO: Comprobación de salud
+    # Docker preguntará cada 5 segundos si MySQL responde
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20

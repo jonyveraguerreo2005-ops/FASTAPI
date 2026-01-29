@@ -1,49 +1,62 @@
-from fastapi import FastAPI, HTTPException
-from src.data.db import productos 
-from src.models.producto import Producto 
+from fastapi import FastAPI, Request, Depends, Form
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
+from sqlalchemy import create_engine, Column, Integer, String, Float
+from sqlalchemy.orm import sessionmaker, Session, declarative_base
+
+DATABASE_URL = "mysql+pymysql://root:root@db_mysql:3306/tienda_fastapi"
+
+engine = create_engine(DATABASE_URL)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+Base = declarative_base()
+
+
+class ItemDB(Base):
+    __tablename__ = "items"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100))
+    price = Column(Float)
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+templates = Jinja2Templates(directory="templates")
 
-@app.get("/productos", response_model=list[Producto])
-async def lista_productos():
-    return productos
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-def siguiente_id() -> int:
-    if len(productos) == 0:
-        return 1
-    else:
-        return max(producto.id for producto in productos if producto.id is not None) + 1
 
-@app.post("/productos", response_model=Producto, status_code=201)
-async def crear_producto(producto: Producto):
-    producto.id = siguiente_id()
-    productos.append(producto)
-    return producto
+@app.get("/web", response_class=HTMLResponse)
+def read_web(request: Request, db: Session = Depends(get_db)):
+    items = db.query(ItemDB).all()
+    return templates.TemplateResponse("inicio.html", {"request": request, "items": items})
 
-def buscar_producto(producto_id: int):
-    for producto in productos:
-        if producto.id == producto_id:
-            return producto
-    return None
 
-@app.put("/productos/{producto_id}", response_model=Producto)
-async def actualizar_producto(producto_id: int, producto_actualizado: Producto):
-    producto = buscar_producto(producto_id)
-    if producto is None:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")  
-    if producto_actualizado.nombre is not None:
-        producto.nombre = producto_actualizado.nombre
-    if producto_actualizado.fecha_registro is not None:
-        producto.fecha_registro = producto_actualizado.fecha_registro
-    return producto
+@app.post("/add")
+def add_item(name: str = Form(...), price: float = Form(...), db: Session = Depends(get_db)):
+    new_item = ItemDB(name=name, price=price)
+    db.add(new_item)
+    db.commit()
+    db.refresh(new_item)
+    return RedirectResponse(url="/web", status_code=303)
 
-@app.delete("/productos/{producto_id}", status_code=204)
-async def eliminar_producto(producto_id: int):
-    producto = buscar_producto(producto_id)
-    if producto is None:
-        raise HTTPException(status_code=404, detail="Producto no encontrado")
-    productos.remove(producto)
-    return None
+class ItemSchema(BaseModel):
+    name: str
+    price: float
+
+@app.post("/items/")
+def create_item(item: ItemSchema, db: Session = Depends(get_db)):
+    db_item = ItemDB(name=item.name, price=item.price)
+    db.add(db_item)
+    db.commit()
+    db.refresh(db_item)
+    return db_item
 
 #comandos
 #python -m venv .venv
