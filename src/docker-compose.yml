@@ -9,7 +9,6 @@ services:
     volumes:
       - .:/app
     
-  # CAJA NUEVA: POSTGRESQL
   db_postgres:
     image: postgres:15
     restart: always

@@ -1,7 +1,7 @@
-fastapi[standard]
+fastapi
 uvicorn
 sqlalchemy
-pymysql
 jinja2
-cryptography
+python-multipart
 psycopg2-binary
+pydantic
